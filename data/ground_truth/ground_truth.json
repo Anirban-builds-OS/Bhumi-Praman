@@ -1,0 +1,50 @@
+[
+  {
+    "owner_name": "Ram Bahadur Thapa",
+    "father_name": "Late Deben Thapa",
+    "survey_number": "SY-1042/B",
+    "khasra_number": "412",
+    "khata_number": "87",
+    "plot_area": "2.35 acres",
+    "village": "Rangapara",
+    "tehsil": "Sonapur",
+    "district": "Kamrup",
+    "land_classification": "Agricultural - Irrigated",
+    "mutation_number": "MUT-2291",
+    "registration_number": "REG/2024/00456",
+    "doc_id": "DOC001",
+    "scan_quality": "clean"
+  },
+  {
+    "owner_name": "Anjali Devi Sharma",
+    "father_name": "Nabin Sharma",
+    "survey_number": "SY-0876/A",
+    "khasra_number": "129",
+    "khata_number": "34",
+    "plot_area": "0.75 hectare",
+    "village": "Beltola",
+    "tehsil": "Guwahati",
+    "district": "Kamrup Metro",
+    "land_classification": "Homestead",
+    "mutation_number": "MUT-1187",
+    "registration_number": "REG/2023/09981",
+    "doc_id": "DOC002",
+    "scan_quality": "medium"
+  },
+  {
+    "owner_name": "Mohammad Iqbal Hussain",
+    "father_name": "Abdul Hussain",
+    "survey_number": "SY-2210/C",
+    "khasra_number": "765",
+    "khata_number": "156",
+    "plot_area": "1.10 acres",
+    "village": "Chandrapur",
+    "tehsil": "Rangia",
+    "district": "Kamrup",
+    "land_classification": "Agricultural - Unirrigated",
+    "mutation_number": "MUT-3062",
+    "registration_number": "REG/2022/04471",
+    "doc_id": "DOC003",
+    "scan_quality": "heavy"
+  }
+]

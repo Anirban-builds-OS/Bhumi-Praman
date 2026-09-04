@@ -1,0 +1,42 @@
+# Environment / secrets
+.env
+*.env.local
+
+# Python
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.egg-info/
+
+# Database
+backend/*.db
+backend/*.db-journal
+
+# Node / frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Storage (uploaded/generated content -- not source)
+storage/uploads/*
+storage/processed/*
+storage/verified/*
+storage/reports/*
+!storage/uploads/.gitkeep
+!storage/processed/.gitkeep
+!storage/verified/.gitkeep
+!storage/reports/.gitkeep
+
+# AI pipeline generated output (regeneratable via ai/evaluate.py)
+ai/output/*.json
+ai/output/*.csv
+ai/output/*.png
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp

@@ -1,0 +1,8 @@
+opencv-python-headless
+pytesseract
+pillow
+numpy
+jiwer
+pandas
+matplotlib
+graphviz

@@ -1,0 +1,33 @@
+# --- Web framework ---
+fastapi>=0.115
+uvicorn[standard]>=0.32
+python-multipart>=0.0.18
+pydantic>=2.9
+pydantic-settings>=2.6
+
+# --- Database ---
+sqlalchemy>=2.0.36
+
+# --- Auth ---
+pyjwt>=2.9
+bcrypt>=4.2
+
+# --- AI pipeline (Bhumi Pramaan) — deliberately unpinned, matching the original
+# prototype's own requirements.txt; these are the same libraries, just
+# without brittle exact-version pins that may not exist on every machine.
+opencv-python-headless==4.10.0.84
+pytesseract
+pillow
+numpy
+jiwer
+pandas
+matplotlib
+graphviz
+
+# --- PDF handling ---
+pymupdf>=1.24
+reportlab>=4.2
+
+# --- Testing ---
+pytest>=8.3
+httpx>=0.27
