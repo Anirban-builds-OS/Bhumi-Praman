@@ -275,6 +275,103 @@ def detect_script(text: str) -> str:
 
     return max(counts, key=lambda language: counts[language])
 
+def get_language_candidates():
+    """
+    Return the Tesseract languages we can safely test for
+    automatic language detection.
+    """
+    installed = get_installed_languages()
+
+    candidates = [
+        ("eng", "en"),
+        ("hin", "hi"),
+        ("ben", "bn"),
+        ("asm", "as"),
+        ("guj", "gu"),
+        ("mar", "mr"),
+        ("pan", "pa"),
+        ("ori", "or"),
+        ("tam", "ta"),
+        ("tel", "te"),
+        ("kan", "kn"),
+        ("mal", "ml"),
+        ("urd", "ur"),
+    ]
+
+    return [
+        (tess_lang, app_lang)
+        for tess_lang, app_lang in candidates
+        if tess_lang in installed
+    ]
+
+def detect_language_from_image(image):
+    """
+    Quickly test installed language models and choose the one
+    producing the strongest OCR confidence.
+    """
+
+    candidates = get_language_candidates()
+
+    if not candidates:
+        return "eng"
+
+    best_language = "eng"
+    best_confidence = -1.0
+
+    for tess_lang, app_lang in candidates:
+
+        try:
+            data = pytesseract.image_to_data(
+                image,
+                lang=tess_lang,
+                config="--oem 3 --psm 11",
+                output_type=Output.DICT,
+            )
+
+            confidences = []
+            text_count = 0
+
+            for i, text in enumerate(data["text"]):
+
+                text = text.strip()
+
+                if not text:
+                    continue
+
+                try:
+                    conf = float(data["conf"][i])
+                except (ValueError, TypeError):
+                    continue
+
+                if conf >= 0:
+                    confidences.append(conf)
+                    text_count += 1
+
+            if not confidences:
+                continue
+
+            mean_confidence = float(
+                np.mean(confidences)
+            )
+
+            # Small bonus for actually finding text.
+            score = (
+                mean_confidence
+                + min(text_count, 50) * 0.10
+            )
+
+            if score > best_confidence:
+                best_confidence = score
+                best_language = tess_lang
+
+        except Exception as exc:
+            print(
+                f"Language detection failed for "
+                f"{tess_lang}: {exc}"
+            )
+
+    return best_language
+
 
 def _run_single(image, tess_lang, psm):
     config = f"--oem 3 --psm {psm}"
@@ -377,65 +474,67 @@ def run_ocr(image, languages=None):
     PSM 12 = sparse text with more layout tolerance
     """
 
+    # languages = languages or ["auto"]
+
+    # if languages == ["auto"]:
+    #     tess_langs = resolve_language("auto")
+    # else:
+    #     tess_langs = "+".join(
+    #         resolve_language(language)
+    #         for language in languages
+    #     )
+
     languages = languages or ["auto"]
 
+    detected_language = None
+
     if languages == ["auto"]:
-        tess_langs = resolve_language("auto")
+        # Get an image suitable for quick language detection.
+        if isinstance(image, dict):
+            variants = image.get("variants", {})
+            if "original" in variants:
+                detection_image = variants["original"]
+            elif variants:
+                detection_image = next(iter(variants.values()))
+            else:
+                detection_image = None
+        else:
+            detection_image = image
+
+        if detection_image is not None:
+            detected_language = detect_language_from_image(detection_image)
+            tess_langs = detected_language
+        else:
+            tess_langs = "eng"
     else:
         tess_langs = "+".join(
             resolve_language(language)
             for language in languages
         )
+        detected_language = tess_langs
 
     all_results = []
 
     # If preprocessing supplied variants, use them.
     if isinstance(image, dict):
-
-        variants = image.get(
-            "variants",
-            {}
-        )
-
+        variants = image.get("variants", {})
     else:
-
-        variants = {
-            "input": image
-        }
+        variants = {"input": image}
 
     for variant_name, variant_image in variants.items():
-
         for psm in (6, 11, 12):
-
             try:
-
-                words = _run_single(
-                    variant_image,
-                    tess_langs,
-                    psm
-                )
-
+                words = _run_single(variant_image, tess_langs, psm)
                 if words:
-
                     all_results.append({
                         "variant": variant_name,
                         "psm": psm,
                         "words": words,
                     })
-
             except Exception as exc:
-
-                print(
-                    f"OCR failed: "
-                    f"{variant_name}, PSM {psm}: {exc}"
-                )
-
-    # ------------------------------------------------------------
-    # Choose the strongest OCR result.
-    # ------------------------------------------------------------
+                print(f"OCR failed: {variant_name}, PSM {psm}: {exc}")
 
     if not all_results:
-
         return {
             "full_text": "",
             "words": [],
@@ -443,54 +542,35 @@ def run_ocr(image, languages=None):
         }
 
     def result_score(result):
-
         words = result["words"]
-
         if not words:
             return 0
+        confidence = np.mean([w["conf"] for w in words])
+        return confidence + min(len(words), 100) * 0.05
 
-        confidence = np.mean([
-            w["conf"]
-            for w in words
-        ])
-
-        return (
-            confidence
-            + min(len(words), 100) * 0.05
-        )
-
-    best = max(
-        all_results,
-        key=result_score
-    )
-
+    best = max(all_results, key=result_score)
     words = best["words"]
-
     lines = _build_lines(words)
+    full_text = "\n".join(line["text"] for line in lines)
+    mean_conf = float(np.mean([w["conf"] for w in words])) if words else 0.0
 
-    full_text = "\n".join(
-        line["text"]
-        for line in lines
-    )
-
-    mean_conf = (
-        float(
-            np.mean([
-                w["conf"]
-                for w in words
-            ])
-        )
-        if words
-        else 0.0
-    )
+    # return {
+    #     "full_text": full_text,
+    #     "words": words,
+    #     "mean_word_confidence": round(mean_conf, 2),
+    #     "ocr_variant": best["variant"],
+    #     "ocr_psm": best["psm"],
+    # }
 
     return {
-        "full_text": full_text,
-        "words": words,
-        "mean_word_confidence": round(
-            mean_conf,
-            2
-        ),
-        "ocr_variant": best["variant"],
-        "ocr_psm": best["psm"],
-    }
+    "full_text": full_text,
+    "words": words,
+    "mean_word_confidence": round(
+        mean_conf,
+        2
+    ),
+    "ocr_variant": best["variant"],
+    "ocr_psm": best["psm"],
+    "detected_language": detected_language,
+    "tesseract_language": tess_langs,
+}
