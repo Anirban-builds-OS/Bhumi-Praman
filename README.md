@@ -276,7 +276,111 @@ then re-run `.\venv\Scripts\Activate.ps1`. This only changes the policy for the 
 **Virtual environment activation (Windows)** &mdash; always `.\venv\Scripts\Activate.ps1` in PowerShell (not
 `source venv/bin/activate`, which is macOS/Linux). In `cmd.exe`, use `venv\Scripts\activate.bat` instead.
 
-## 21. Deployment
+## 21. 🛠️ Technology Stack
+
+### 🎨 Frontend
+
+<p>
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white" />
+  <img src="https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white" />
+  <img src="https://img.shields.io/badge/Axios-HTTP_Client-5A29E4?logo=axios&logoColor=white" />
+  <img src="https://img.shields.io/badge/React_Query-5-FF4154?logo=reactquery&logoColor=white" />
+  <img src="https://img.shields.io/badge/Leaflet-1.9-199900?logo=leaflet&logoColor=white" />
+  <img src="https://img.shields.io/badge/Recharts-3-22B5BF" />
+</p>
+
+### ⚙️ Backend & API
+
+<p>
+  <img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white" />
+  <img src="https://img.shields.io/badge/Uvicorn-ASGI-499848?logo=uvicorn&logoColor=white" />
+  <img src="https://img.shields.io/badge/Pydantic-2-E92063?logo=pydantic&logoColor=white" />
+  <img src="https://img.shields.io/badge/SQLAlchemy-2-D71F00?logo=sqlalchemy&logoColor=white" />
+  <img src="https://img.shields.io/badge/REST_API-Architecture-02569B" />
+</p>
+
+### 🤖 AI, OCR & Document Intelligence
+
+<p>
+  <img src="https://img.shields.io/badge/Tesseract-OCR-4285F4?logo=google&logoColor=white" />
+  <img src="https://img.shields.io/badge/OpenCV-Computer_Vision-5C3EE8?logo=opencv&logoColor=white" />
+  <img src="https://img.shields.io/badge/NumPy-Scientific_Computing-013243?logo=numpy&logoColor=white" />
+  <img src="https://img.shields.io/badge/Pandas-Data_Processing-150458?logo=pandas&logoColor=white" />
+  <img src="https://img.shields.io/badge/Pillow-Image_Processing-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/Graphviz-Workflow_Visualization-FF6B35" />
+  <img src="https://img.shields.io/badge/JiWER-OCR_Evaluation-7B1FA2" />
+</p>
+
+### 🗄️ Data & Storage
+
+<p>
+  <img src="https://img.shields.io/badge/SQLAlchemy-ORM-D71F00?logo=sqlalchemy&logoColor=white" />
+  <img src="https://img.shields.io/badge/SQLite-Prototype-003B57?logo=sqlite&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostgreSQL-Production_Target-4169E1?logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostGIS-GIS_Extension-4169E1?logo=postgresql&logoColor=white" />
+</p>
+
+### 🗺️ GIS & Spatial Intelligence
+
+<p>
+  <img src="https://img.shields.io/badge/Leaflet-Interactive_Maps-199900?logo=leaflet&logoColor=white" />
+  <img src="https://img.shields.io/badge/PostGIS-Spatial_Data-4169E1?logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/GeoJSON-Geospatial_Data-8BC34A" />
+</p>
+
+### 🔐 Authentication & Security
+
+<p>
+  <img src="https://img.shields.io/badge/JWT-Authentication-000000?logo=jsonwebtokens&logoColor=white" />
+  <img src="https://img.shields.io/badge/bcrypt-Password_Hashing-338033" />
+  <img src="https://img.shields.io/badge/RBAC-Role_Based_Access-4B5563" />
+  <img src="https://img.shields.io/badge/Environment_Variables-.env-6B7280" />
+</p>
+
+### 📄 Document & PDF Processing
+
+<p>
+  <img src="https://img.shields.io/badge/PyMuPDF-PDF_Processing-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/ReportLab-PDF_Generation-0A7B83?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/Multipart-File_Uploads-6B7280" />
+</p>
+
+### 🧪 Testing & Code Quality
+
+<p>
+  <img src="https://img.shields.io/badge/Pytest-Testing-0A9EDC?logo=pytest&logoColor=white" />
+  <img src="https://img.shields.io/badge/HTTPX-API_Testing-7B42BC" />
+  <img src="https://img.shields.io/badge/OXLint-Linting-111827" />
+  <img src="https://img.shields.io/badge/TypeScript-Static_Typing-3178C6?logo=typescript&logoColor=white" />
+</p>
+
+### 🐳 DevOps & Development
+
+<p>
+  <img src="https://img.shields.io/badge/Docker-Containerization-2496ED?logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Docker_Compose-Multi--Service-2496ED?logo=docker&logoColor=white" />
+  <img src="https://img.shields.io/badge/Git-Version_Control-F05032?logo=git&logoColor=white" />
+  <img src="https://img.shields.io/badge/GitHub-Code_Hosting-181717?logo=github&logoColor=white" />
+  <img src="https://img.shields.io/badge/VS_Code-Development-007ACC?logo=visualstudiocode&logoColor=white" />
+</p>
+
+### 🧰 Core Languages
+
+<p>
+  <img src="https://img.shields.io/badge/Python-Primary-3776AB?logo=python&logoColor=white" />
+  <img src="https://img.shields.io/badge/TypeScript-Frontend-3178C6?logo=typescript&logoColor=white" />
+  <img src="https://img.shields.io/badge/JavaScript-Frontend_Runtime-F7DF1E?logo=javascript&logoColor=black" />
+  <img src="https://img.shields.io/badge/SQL-Database-336791?logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/HTML5-Markup-E34F26?logo=html5&logoColor=white" />
+  <img src="https://img.shields.io/badge/CSS3-Styling-1572B6?logo=css3&logoColor=white" />
+</p>
+
+
+## 22. Deployment
 
 `deployment/` contains a `Dockerfile` for the backend and one for the frontend, plus a root
 `docker-compose.yml` that wires both together with a persistent volume for `storage/` and the SQLite file.
@@ -285,7 +389,7 @@ or orchestrator as part of this build (no Docker daemon was available in the env
 validate `docker compose up --build` in your own environment before relying on it. For a real deployment, also
 switch `DATABASE_URL` to PostgreSQL and set a strong, random `SECRET_KEY`.
 
-## 22. Security
+## 23. Security
 
 - Passwords hashed with bcrypt, never stored or logged in plain text
 - JWT bearer auth; role is always resolved server-side from the authenticated user's account row, never
@@ -298,7 +402,7 @@ switch `DATABASE_URL` to PostgreSQL and set a strong, random `SECRET_KEY`.
 - Every mutating action is written to an append-only audit log
 - This is a **prototype's** security posture, not a certified/audited one &mdash; see Limitations.
 
-## 23. Limitations
+## 24. Limitations
 
 Being direct about where this stands, per the project's own technical-honesty requirement:
 
@@ -319,7 +423,7 @@ Being direct about where this stands, per the project's own technical-honesty re
 - Record verification hash is a SHA-256 integrity fingerprint, not a PKI digital signature with legal
   non-repudiation.
 
-## 24. Future Scope
+## 25. Future Scope
 
 - Swap in a trained OCR/NER model as the sample set grows (the adapter boundary in `pipeline_service.py`
   exists specifically for this)
@@ -330,7 +434,7 @@ Being direct about where this stands, per the project's own technical-honesty re
 - Continuous-learning loop: officer corrections already flow into the audit log; the next step is exporting
   them as a labelled fine-tuning/evaluation dataset (see `ai/README.md`'s own upgrade-path notes)
 
-## 25. Team Contribution Structure
+## 26. Team Contribution Structure
 
 Suggested split for a 6-member SIH team (adjust to your team's actual roles):
 Frontend (React/UI), Backend (FastAPI/API), AI/OCR (pipeline &amp; model work), Database/GIS, DevOps/Deployment,
