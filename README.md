@@ -185,6 +185,8 @@ npm run dev
 Open http://localhost:5173 &mdash; the dev server proxies `/api/*` to the backend automatically, so both need
 to be running together but there's nothing else to configure.
 
+For frontend deployed part you can visit https://bhumi-praman.vercel.app
+
 **One-command option:** `scripts/start-dev.ps1` (Windows) starts both servers in one PowerShell window &mdash;
 see that script's comments for what it does.
 
