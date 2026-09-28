@@ -43,7 +43,7 @@ in the loop rather than fully automating a legally sensitive decision.
 - Dashboard analytics, including a live, real evaluation re-run against a ground-truth sample set
 - Official PDF report export per verified record, with a SHA-256 record integrity hash
 
-## 4. Architecture
+## 4.1 Architecture
 
 ```
 Browser (React)
@@ -65,6 +65,104 @@ The browser never touches Python directly. Every AI call goes through the FastAP
 single adapter module (`pipeline_service.py`) that wraps the `ai/` package &mdash; so the OCR/AI engine can be
 swapped later without touching the API or frontend.
 
+## 4.2 End-to-End Workflow
+
+Bhumi Praman follows an **AI-assisted, human-verified workflow** that converts scanned or photographed land records into structured, searchable and auditable digital records.
+
+```text
+┌──────────────────────┐
+│ 1. USER AUTHENTICATION│
+│ JWT + Role-Based Access│
+└──────────┬───────────┘
+           │
+           ▼
+┌──────────────────────┐
+│ 2. DOCUMENT INGESTION│
+│ PDF / JPG / PNG      │
+│ Upload through Web UI│
+└──────────┬───────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│ 3. IMAGE PREPROCESSING     │
+│ • Deskew                   │
+│ • Denoise                  │
+│ • Contrast / illumination  │
+│ • Binarization             │
+└──────────┬─────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│ 4. OCR / TEXT RECOGNITION  │
+│ Tesseract + pytesseract    │
+│ English / Hindi / Assamese │
+│ + confidence + bounding box│
+└──────────┬─────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│ 5. FIELD EXTRACTION        │
+│ Rule-based field detection │
+│ 12 Record-of-Rights fields │
+└──────────┬─────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│ 6. CONFIDENCE SCORING      │
+│ OCR confidence             │
+│ + pattern-match confidence │
+│ → field-level confidence   │
+└──────────┬─────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│ 7. SOURCE HIGHLIGHTING     │
+│ Extracted values are linked│
+│ to OCR bounding boxes on   │
+│ the original document      │
+└──────────┬─────────────────┘
+           │
+           ▼
+┌────────────────────────────┐
+│ 8. VALIDATION ENGINE       │
+│ • Required-field checks    │
+│ • Format / rule validation │
+│ • Duplicate detection      │
+│ • Ownership conflict flags │
+└──────────┬─────────────────┘
+           │
+           ▼
+      ┌───────────────┐
+      │ Review needed?│
+      └───────┬───────┘
+          YES │       │ NO
+              ▼       ▼
+┌──────────────────┐  ┌──────────────────────┐
+│ 9. HUMAN         │  │ Continue to verified │
+│ VERIFICATION     │  │ record preparation   │
+│                  │  └──────────┬───────────┘
+│ • Review fields  │             │
+│ • Edit values    │             │
+│ • Accept / Reject│             │
+└─────────┬────────┘             │
+          │                      │
+          └──────────┬───────────┘
+                     ▼
+┌────────────────────────────┐
+│ 10. VERIFIED DIGITAL RECORD│
+│ • Structured data          │
+│ • Searchable record        │
+│ • Verification status      │
+│ • SHA-256 integrity hash   │
+└────────────┬───────────────┘
+             │
+      ┌──────┼───────────┬─────────────┐
+      ▼      ▼           ▼             ▼
+┌─────────┐┌─────────┐┌──────────┐┌──────────────┐
+│ Archive ││   GIS   ││ PDF      ││ Audit Trails │
+│ Search  ││ Explorer││ Report   ││ & Activities │
+└─────────┘└─────────┘└──────────┘└──────────────┘
+```
 ## 5. Technology Stack
 
 | Layer | Technology |
@@ -276,7 +374,7 @@ then re-run `.\venv\Scripts\Activate.ps1`. This only changes the policy for the 
 **Virtual environment activation (Windows)** &mdash; always `.\venv\Scripts\Activate.ps1` in PowerShell (not
 `source venv/bin/activate`, which is macOS/Linux). In `cmd.exe`, use `venv\Scripts\activate.bat` instead.
 
-## 21. 🛠️ Technology Stack
+## 21. 🛠️ Technology Used
 
 ### 🎨 Frontend
 
