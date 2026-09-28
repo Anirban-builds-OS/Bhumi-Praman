@@ -69,7 +69,7 @@ swapped later without touching the API or frontend.
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18 + TypeScript + Vite + Tailwind CSS v4 + React Router + TanStack Query + Recharts + react-leaflet |
+| Frontend | React 19 + TypeScript + Vite + Tailwind CSS v4 + React Router + TanStack Query + Recharts + react-leaflet |
 | Backend | Python + FastAPI + SQLAlchemy 2.0 + Pydantic v2 |
 | AI / OCR | OpenCV, Tesseract (via pytesseract), rule-based extraction, PyMuPDF (PDF handling) |
 | Database | SQLite for local development (zero setup); swappable to PostgreSQL via `DATABASE_URL` |
@@ -95,7 +95,7 @@ bhumi-praman/
 
 - **Python 3.11+**
 - **Node.js 18+** and npm
-- **Tesseract OCR** (with English, Hindi, Bengali, Assamese and etc language data)
+- **Tesseract OCR** (with English, Assamese, Bengali, Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil, Telugu. language data)
 - Git
 
 ## 8–9. Installation &amp; Environment Setup
@@ -433,14 +433,6 @@ Being direct about where this stands, per the project's own technical-honesty re
 - Frontend automated test suite (Vitest + React Testing Library)
 - Continuous-learning loop: officer corrections already flow into the audit log; the next step is exporting
   them as a labelled fine-tuning/evaluation dataset (see `ai/README.md`'s own upgrade-path notes)
-
-## 26. Team Contribution Structure
-
-Suggested split for a 6-member SIH team (adjust to your team's actual roles):
-Frontend (React/UI), Backend (FastAPI/API), AI/OCR (pipeline &amp; model work), Database/GIS, DevOps/Deployment,
-Documentation/Presentation. See `docs/presentation/` for slide-deck source material to build out.
-
----
 
 ## Demo Walkthrough
 
