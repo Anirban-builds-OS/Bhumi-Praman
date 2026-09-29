@@ -2042,9 +2042,3 @@ TRUSTED LAND RECORD
 ```
 
 ---
-
-# 57. License
-
-Add the project's applicable open-source license here.
-
----
