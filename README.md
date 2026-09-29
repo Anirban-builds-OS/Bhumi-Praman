@@ -1,544 +1,2050 @@
 # Bhumi Praman
-### Intelligent Land Record Digitization &amp; Validation System
-**Smart India Hackathon 2026 &middot; Problem Statement 26018** (Ministry of Rural Development) &middot; Student prototype
 
-**Bhumi** = land, **Praman** = proof / verification.
+### Intelligent Land Record Digitization & Validation System
 
-Bhumi Praman turns scanned and legacy land records (Record of Rights / Khatauni documents) into structured,
-searchable, validated digital records &mdash; using AI/OCR to do the first pass, and a human officer to make
-every field official. No field is ever treated as final without a person reviewing it.
+**Smart India Hackathon 2026 · Problem Statement 26018 · Ministry of Rural Development**
 
-> **This is a hackathon prototype**, not a deployed government system. It uses fictional, synthetically
-> generated sample data, and every accuracy figure it displays is measured live against a small labelled
-> sample set &mdash; never a hard-coded claim. See [Limitations](#limitations) below.
+> **AI extracts. Rules validate. Evidence explains. Humans certify.**
+
+Bhumi Praman is an AI-assisted platform for transforming scanned, handwritten, multilingual, and legacy land records into **structured, searchable, validated, traceable, and verifiable digital records**.
+
+It is designed as an **intelligence and verification layer around existing land-record infrastructure**, not as a replacement for government LRMS/DILRMP systems.
+
+**Bhumi** = land · **Praman** = proof / verification
 
 ---
 
-## 1. Project Overview
+## Why Bhumi Praman?
 
-The system takes a scanned/photographed land document (PDF, JPG, or PNG), runs it through an OCR + field
-extraction pipeline, scores every extracted field's confidence, checks it for validation issues and possible
-duplicates/ownership conflicts, and routes it to a Verification Officer who corrects, accepts, or rejects each
-field before the record is saved as an official, searchable, mapped, and auditable digital record.
+Land-record digitization is not just an OCR problem.
 
-## 2. Problem Statement
+A production-oriented system must answer four questions for every important field:
 
-PS 26018 asks for a system that digitizes India's legacy land records (often handwritten or degraded
-scans, in multiple languages, spread across village/tehsil/district revenue offices) into a structured,
-searchable, validated digital archive &mdash; while keeping the process auditable and keeping trained officers
-in the loop rather than fully automating a legally sensitive decision.
+1. **What did the document say?**
+2. **How confidently was it extracted?**
+3. **Does it agree with related land records and spatial evidence?**
+4. **Who reviewed and certified the final value?**
 
-## 3. Features
-
-- Multilingual OCR (English, Hindi, Bengali, Assamese and etc) with image preprocessing (deskew, denoise, contrast, binarize)
-- Rule-based structured field extraction across 12 Record-of-Rights fields, each with a transparent confidence score
-- Real source highlighting &mdash; extracted field values are matched back to their location on the original
-  scan via OCR bounding boxes, not simulated
-- Validation engine: required-field/format checks, possible-duplicate detection, possible ownership-conflict detection
-- Human verification workspace: side-by-side document + extracted fields, accept/edit/reject per field
-- Role-based access control (Administrator / Verification Officer / Record Officer), enforced server-side
-- Full audit trail of every upload, edit, verification, rejection, and report generation
-- Search &amp; archive registry across all digitized records
-- GIS explorer (Leaflet + OpenStreetMap), clearly labelled as prototype/demonstration positioning
-- Dashboard analytics, including a live, real evaluation re-run against a ground-truth sample set
-- Official PDF report export per verified record, with a SHA-256 record integrity hash
-
-## 4.1 Architecture
-
-```
-Browser (React)
-   |
-   v
-FastAPI backend  <----> SQLite/PostgreSQL database
-   |
-   v
-AI Prototype Adapter (backend/app/services/pipeline_service.py)
-   |
-   v
-ai/  --  preprocessing -> OCR -> field extraction -> confidence scoring -> validation
-   |
-   v
-Local file storage (storage/uploads, processed, reports)
-```
-
-The browser never touches Python directly. Every AI call goes through the FastAPI backend, which calls a
-single adapter module (`pipeline_service.py`) that wraps the `ai/` package &mdash; so the OCR/AI engine can be
-swapped later without touching the API or frontend.
-
-## 4.2 End-to-End Workflow
-
-Bhumi Praman follows an **AI-assisted, human-verified workflow** that converts scanned or photographed land records into structured, searchable and auditable digital records.
+Bhumi Praman therefore moves beyond:
 
 ```text
-┌──────────────────────┐
-│ 1. USER AUTHENTICATION│
-│ JWT + Role-Based Access│
-└──────────┬───────────┘
-           │
-           ▼
-┌──────────────────────┐
-│ 2. DOCUMENT INGESTION│
-│ PDF / JPG / PNG      │
-│ Upload through Web UI│
-└──────────┬───────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│ 3. IMAGE PREPROCESSING     │
-│ • Deskew                   │
-│ • Denoise                  │
-│ • Contrast / illumination  │
-│ • Binarization             │
-└──────────┬─────────────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│ 4. OCR / TEXT RECOGNITION  │
-│ Tesseract + pytesseract    │
-│ English / Hindi / Assamese │
-│ + confidence + bounding box│
-└──────────┬─────────────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│ 5. FIELD EXTRACTION        │
-│ Rule-based field detection │
-│ 12 Record-of-Rights fields │
-└──────────┬─────────────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│ 6. CONFIDENCE SCORING      │
-│ OCR confidence             │
-│ + pattern-match confidence │
-│ → field-level confidence   │
-└──────────┬─────────────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│ 7. SOURCE HIGHLIGHTING     │
-│ Extracted values are linked│
-│ to OCR bounding boxes on   │
-│ the original document      │
-└──────────┬─────────────────┘
-           │
-           ▼
-┌────────────────────────────┐
-│ 8. VALIDATION ENGINE       │
-│ • Required-field checks    │
-│ • Format / rule validation │
-│ • Duplicate detection      │
-│ • Ownership conflict flags │
-└──────────┬─────────────────┘
-           │
-           ▼
-      ┌───────────────┐
-      │ Review needed?│
-      └───────┬───────┘
-          YES │       │ NO
-              ▼       ▼
-┌──────────────────┐  ┌──────────────────────┐
-│ 9. HUMAN         │  │ Continue to verified │
-│ VERIFICATION     │  │ record preparation   │
-│                  │  └──────────┬───────────┘
-│ • Review fields  │             │
-│ • Edit values    │             │
-│ • Accept / Reject│             │
-└─────────┬────────┘             │
-          │                      │
-          └──────────┬───────────┘
-                     ▼
-┌────────────────────────────┐
-│ 10. VERIFIED DIGITAL RECORD│
-│ • Structured data          │
-│ • Searchable record        │
-│ • Verification status      │
-│ • SHA-256 integrity hash   │
-└────────────┬───────────────┘
-             │
-      ┌──────┼───────────┬─────────────┐
-      ▼      ▼           ▼             ▼
-┌─────────┐┌─────────┐┌──────────┐┌──────────────┐
-│ Archive ││   GIS   ││ PDF      ││ Audit Trails │
-│ Search  ││ Explorer││ Report   ││ & Activities │
-└─────────┘└─────────┘└──────────┘└──────────────┘
+SCAN → OCR → DATABASE
 ```
-## 5. Technology Stack
 
-| Layer | Technology |
+towards:
+
+```text
+DOCUMENT
+   ↓
+UNDERSTAND
+   ↓
+EXTRACT
+   ↓
+SCORE
+   ↓
+VALIDATE
+   ↓
+RECONCILE
+   ↓
+VERIFY
+   ↓
+PROVENANCE
+   ↓
+TRUSTED RECORD
+```
+
+---
+
+# 1. Problem Statement
+
+**SIH 2026 — PS 26018: Intelligent Land Record Digitization and Validation System**
+
+Legacy land records can exist as:
+
+- scanned Record-of-Rights / Khatauni documents
+- handwritten registers
+- degraded images
+- legacy PDFs
+- multilingual records
+- semi-structured forms
+- mutation registers
+- deeds and related supporting documents
+- cadastral maps and spatial references
+
+A digitization system must preserve the connection between the **source document**, **machine-extracted information**, **validation evidence**, and **human verification**.
+
+Bhumi Praman is built around that principle.
+
+---
+
+# 2. Core Design Principle
+
+> **AI is an assistant, not the authority.**
+
+The platform separates machine inference from official verification:
+
+```text
+AI output
+   ↓
+"Probable value"
+   ↓
+Confidence + evidence + validation
+   ↓
+Human officer review
+   ↓
+Verified value
+```
+
+No machine-generated value should be treated as an official/legal determination merely because its confidence score is high.
+
+---
+
+# 3. Product Workflow
+
+```mermaid
+flowchart TD
+    A[Document Upload] --> B[Preprocessing]
+    B --> C[Document & Language Classification]
+    C --> D[OCR / HTR]
+    D --> E[Structured Field Extraction]
+    E --> F[Field-Level Confidence]
+    F --> G[Source Evidence Linking]
+    G --> H[Validation & Anomaly Detection]
+    H --> I[Cross-Record Reconciliation]
+    I --> J[Cadastral / GIS Consistency]
+    J --> K[Verification Priority Queue]
+    K --> L[Human Verification]
+    L --> M[Versioned Verified Record]
+    M --> N[Audit Trail & Integrity]
+    N --> O[Reports / Search / GIS]
+    N --> P[Citizen Verification]
+```
+
+---
+
+# 4. Current Prototype — Implemented
+
+The current repository already provides the core end-to-end workflow.
+
+| Capability | Current Status |
 |---|---|
-| Frontend | React 19 + TypeScript + Vite + Tailwind CSS v4 + React Router + TanStack Query + Recharts + react-leaflet |
-| Backend | Python + FastAPI + SQLAlchemy 2.0 + Pydantic v2 |
-| AI / OCR | OpenCV, Tesseract (via pytesseract), rule-based extraction, PyMuPDF (PDF handling) |
-| Database | SQLite for local development (zero setup); swappable to PostgreSQL via `DATABASE_URL` |
-| Auth | JWT (PyJWT) + bcrypt |
-| Reports | ReportLab (PDF generation) |
-| Testing | pytest, httpx, FastAPI TestClient |
+| Document upload: PDF / JPG / PNG | ✅ Implemented |
+| OpenCV preprocessing | ✅ Implemented |
+| Tesseract OCR | ✅ Implemented |
+| OCR confidence + bounding boxes | ✅ Implemented |
+| Structured field extraction | ✅ Implemented |
+| 12 Record-of-Rights fields | ✅ Implemented |
+| Field-level confidence | ✅ Implemented |
+| Source-document field highlighting | ✅ Implemented |
+| Required/format validation | ✅ Implemented |
+| Duplicate / ownership-conflict flags | ✅ Implemented |
+| Human verification workspace | ✅ Implemented |
+| Server-side RBAC | ✅ Implemented |
+| Audit logging | ✅ Implemented |
+| Search / archive registry | ✅ Implemented |
+| GIS prototype | ✅ Implemented |
+| Live evaluation re-run | ✅ Implemented |
+| PDF report generation | ✅ Implemented |
+| SHA-256 record integrity fingerprint | ✅ Implemented |
+| SQLite / PostgreSQL configuration | ✅ Implemented |
+| Backend tests | ✅ Implemented |
+| Docker deployment starting point | ✅ Present; validate locally |
 
-## 6. Folder Structure
+---
 
+# 5. Differentiated Intelligence Layer
+
+The following capabilities form the **next intelligence layer** of Bhumi Praman. They are deliberately separated from the already-working prototype so the README never confuses a planned capability with a demonstrated one.
+
+## 5.1 Document Intelligence & Quality Gate
+
+Before OCR, classify the incoming document.
+
+### Inputs
+
+- document type
+- page count
+- language/script
+- orientation
+- scan quality
+- layout
+- table structure
+- handwriting likelihood
+
+### Proposed routing
+
+```text
+Incoming Document
+      ↓
+Quality Gate
+      ↓
+Document Type
+      ↓
+Language / Script
+      ↓
+Layout Detection
+      ↓
+OCR / HTR Route
 ```
+
+Possible document classes:
+
+- Record of Rights
+- Khatauni / Jamabandi
+- Mutation register
+- Sale deed
+- Patta / regional extract
+- Cadastral map
+- supporting document
+
+This prevents every document from being forced through the same extraction schema.
+
+---
+
+# 6. Advanced Document Processing
+
+## 6.1 Preprocessing Pipeline
+
+The current pipeline already performs core preprocessing. The extensible pipeline can expand to:
+
+```text
+Input
+ ↓
+Orientation Detection
+ ↓
+Deskew
+ ↓
+Denoise
+ ↓
+Grayscale
+ ↓
+Contrast Enhancement / CLAHE
+ ↓
+Adaptive Thresholding
+ ↓
+Background Cleanup
+ ↓
+Border Removal
+ ↓
+Crop / Region Detection
+ ↓
+Resolution Enhancement
+ ↓
+Quality Score
+```
+
+A quality gate can route unreadable pages to manual inspection instead of producing misleading OCR.
+
+### Proposed technical components
+
+- OpenCV
+- Pillow
+- NumPy
+- Hough/minAreaRect orientation detection
+- Otsu / adaptive thresholding
+- Laplacian-based blur measurement
+- configurable preprocessing profiles
+
+---
+
+# 7. Multilingual OCR & Handwriting Recognition
+
+## Current
+
+- Tesseract / pytesseract
+- multilingual language packs
+- OCR bounding boxes
+- OCR confidence
+
+## Upgrade path
+
+A provider-agnostic OCR adapter can support:
+
+- Tesseract
+- PaddleOCR
+- RapidOCR / ONNX
+- TrOCR / Indic HTR
+- other approved Indic-language OCR services
+
+```text
+                 OCR Router
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+     Tesseract   PaddleOCR   Indic HTR
+        │           │           │
+        └───────────┼───────────┘
+                    ▼
+              Normalized OCR
+```
+
+Routing can use:
+
+- language/script
+- document type
+- handwriting probability
+- image quality
+- model availability
+- latency requirements
+
+### Indic normalization
+
+The extraction layer should also support:
+
+- transliteration
+- numeral normalization
+- date normalization
+- unit normalization
+- Unicode normalization
+- script variants
+
+---
+
+# 8. Structured Land-Record Extraction
+
+The current schema supports 12 Record-of-Rights fields.
+
+The extensible canonical schema can include:
+
+| Category | Example fields |
+|---|---|
+| Identity | Owner name, guardian/father name |
+| Parcel | Survey no., Khasra no., Khata no., plot no. |
+| Area | Recorded area, unit, normalized area |
+| Administrative | Village, tehsil, district, state |
+| Classification | Agricultural / residential / other |
+| Ownership | Ownership type, share |
+| Mutation | Mutation number, mutation date |
+| Registration | Registration reference, date |
+| Temporal | Record date, effective-from, effective-to |
+| Spatial | Parcel identifier, geometry reference |
+| Provenance | Source document, page, evidence region |
+| Verification | Status, verifier, verification time |
+
+### Hybrid extraction architecture
+
+Use deterministic extraction where rules are reliable and semantic extraction where context matters:
+
+```text
+OCR Output
+   │
+   ├── Deterministic fields
+   │      ├── dates
+   │      ├── survey IDs
+   │      ├── mutation IDs
+   │      ├── numbers
+   │      └── units
+   │
+   └── Semantic fields
+          ├── owner
+          ├── guardian/father
+          ├── classification
+          └── ownership context
+```
+
+The two paths are merged through a field-ownership schema so that a semantic model cannot silently overwrite a deterministic value.
+
+---
+
+# 9. Field-Level Confidence Engine
+
+The existing system already provides field-level confidence.
+
+The upgraded design treats confidence as a **multi-signal explanation**, not a single black-box number.
+
+Possible signals:
+
+```text
+OCR Confidence
+      +
+Extraction Confidence
+      +
+Pattern / Format Validity
+      +
+Context Agreement
+      +
+Cross-Record Agreement
+      +
+Evidence Quality
+      +
+Spatial Agreement
+      ↓
+Field Confidence
+```
+
+Every score should also expose a machine-readable explanation.
+
+Example:
+
+```json
+{
+  "field": "survey_number",
+  "value": "124/3",
+  "confidence": 0.94,
+  "signals": {
+    "ocr": 0.98,
+    "pattern_match": 0.95,
+    "cross_record": 0.91
+  },
+  "reason": "OCR and survey-number pattern agree; one related record differs."
+}
+```
+
+> Confidence is decision support, not legal proof.
+
+---
+
+# 10. Evidence-Backed Extraction
+
+One of Bhumi Praman's strongest existing capabilities is source highlighting.
+
+The upgraded model makes this a formal provenance layer:
+
+```text
+Original Scan
+     ↓
+Page
+     ↓
+OCR Span
+     ↓
+Bounding Box
+     ↓
+Extracted Field
+     ↓
+Validation Result
+     ↓
+Officer Correction
+     ↓
+Verified Value
+```
+
+### Evidence object
+
+Each important field can reference:
+
+- source document ID
+- page number
+- bounding box
+- OCR text span
+- OCR model/run ID
+- extraction run ID
+- confidence
+- validation findings
+- reviewer action
+
+This makes the question **"Why is this value in the database?"** answerable.
+
+---
+
+# 11. Validation & Anomaly Engine
+
+Validation should operate at multiple levels.
+
+## Field-level validation
+
+- required fields
+- field formats
+- date validity
+- numeric validity
+- allowed classifications
+- identifier patterns
+
+## Record-level validation
+
+- area > 0
+- internal field consistency
+- owner/share totals
+- administrative hierarchy
+- mutation/record-date consistency
+
+## Cross-record validation
+
+- duplicate record
+- owner conflict
+- survey/Khasra conflict
+- area mismatch
+- temporal inconsistency
+- mutation discontinuity
+
+## Spatial validation
+
+- parcel identifier mismatch
+- geometry overlap
+- topology errors
+- document/GIS area mismatch
+
+### Example anomaly object
+
+```json
+{
+  "type": "AREA_MISMATCH",
+  "severity": "HIGH",
+  "record_id": "REC-1024",
+  "expected": 10.0,
+  "observed": 10.5,
+  "unit": "acre",
+  "evidence": [
+    "parent_record:REC-1001",
+    "child_record:REC-1024"
+  ],
+  "requires_review": true
+}
+```
+
+---
+
+# 12. Regional Land-Unit Normalization
+
+Land-area values must be normalized before mathematical comparison.
+
+Examples:
+
+```text
+Bigha
+Biswa
+Acre
+Hectare
+Square metre
+Square feet
+```
+
+The target normalization layer should:
+
+1. identify source unit
+2. identify jurisdiction/profile
+3. convert to canonical unit
+4. preserve original value
+5. preserve conversion provenance
+
+For mathematically sensitive operations, use decimal arithmetic rather than floating-point approximations.
+
+```text
+Original:
+2.50 Bigha
+
+       ↓
+
+Jurisdiction-specific conversion
+
+       ↓
+
+Canonical:
+Normalized Area
+
+       ↓
+
+Reconciliation Engine
+```
+
+No conversion should be assumed universally valid across jurisdictions where local definitions differ.
+
+---
+
+# 13. Cross-Document Reconciliation Engine
+
+This is one of the main differentiators of the proposed Bhumi Praman architecture.
+
+Instead of:
+
+```text
+Document A → Record A
+Document B → Record B
+```
+
+the system creates relationships:
+
+```text
+Document A
+    │
+    ├── same parcel
+    ├── same owner candidate
+    ├── mutation relation
+    ├── parent parcel
+    └── supporting document
+          │
+          ▼
+     Record Graph
+```
+
+### Reconciliation dimensions
+
+- owner
+- guardian/father
+- village
+- survey/Khasra
+- Khata
+- area
+- mutation
+- registration
+- record dates
+- parcel lineage
+
+### Match types
+
+```text
+EXACT
+NORMALIZED
+FUZZY
+PROBABLE
+CONFLICT
+UNKNOWN
+```
+
+Every relationship carries evidence and confidence.
+
+---
+
+# 14. Ownership & Parcel Timeline
+
+A record should be able to explain its history.
+
+Example:
+
+```text
+1998
+Original Record
+Owner: A
+Area: 10.00 acres
+      │
+      ▼
+2005
+Mutation
+Owner: B
+      │
+      ▼
+2017
+Subdivision
+10.00 → 4.25 + 5.75
+      │
+      ▼
+2024
+Transfer
+      │
+      ▼
+2026
+Current Record
+```
+
+### Timeline events
+
+- creation
+- mutation
+- sale/transfer
+- subdivision
+- amalgamation
+- correction
+- verification
+
+Every event should point back to one or more source documents.
+
+---
+
+# 15. Area & Subdivision Reconciliation
+
+For parcel hierarchies:
+
+```text
+Parent Parcel
+      │
+      ├── Child 1
+      ├── Child 2
+      └── Child 3
+```
+
+The reconciliation rule becomes:
+
+```text
+SUM(child areas) ≈ parent area
+```
+
+with configurable tolerance.
+
+Example:
+
+```text
+Parent: 10.00 acres
+Children: 3.25 + 2.75 + 4.50
+Total: 10.50 acres
+
+→ AREA RECONCILIATION FAILURE
+→ HIGH PRIORITY REVIEW
+```
+
+The original area and normalized area must both remain available for auditability.
+
+---
+
+# 16. Entity Resolution
+
+Names vary across legacy records.
+
+Example:
+
+```text
+Ramesh Kumar
+Ramesh Kr.
+Ramesh Kumar S/O Mohan
+रमेश कुमार
+```
+
+Entity resolution should compare multiple attributes instead of relying only on name similarity:
+
+- normalized name
+- transliteration
+- guardian/father name
+- village
+- address
+- parcel references
+- historical relationships
+
+### Result
+
+```text
+Candidate Entity Match
+       ↓
+Similarity: 0.91
+       ↓
+Supporting evidence:
+✓ Same village
+✓ Same father name
+✓ Same Khasra
+⚠ Name spelling variation
+       ↓
+Human confirmation required
+```
+
+This is **record linkage**, not automated identity proof.
+
+---
+
+# 17. Multi-Page Record Intelligence
+
+Instead of processing every page as an unrelated record:
+
+```text
+12-page PDF
+    ↓
+Page Classification
+    ↓
+Page Ordering
+    ↓
+Record Grouping
+    ↓
+Cross-Page References
+    ↓
+Unified Record
+```
+
+Possible page classes:
+
+- header/title page
+- owner table
+- mutation section
+- parcel details
+- continuation page
+- annexure
+- map page
+
+This is particularly important for long revenue registers.
+
+---
+
+# 18. Cadastral & GIS Consistency
+
+The GIS layer should not be only a visualization.
+
+The target system uses spatial data as another validation signal.
+
+```text
+Land Record
+Survey/Khasra + Area
+       │
+       ▼
+Parcel Linker
+       │
+       ▼
+GIS / PostGIS
+       │
+       ├── ID agreement
+       ├── Area agreement
+       ├── Spatial overlap
+       └── Topology checks
+```
+
+### Spatial technology path
+
+- Leaflet for web visualization
+- GeoJSON for exchange
+- PostgreSQL + PostGIS for spatial storage
+- GeoServer for service publishing
+- QGIS for administrative/spatial data preparation
+
+> Current map coordinates are prototype/demo locations, not authoritative cadastral boundaries.
+
+---
+
+# 19. Anomaly Center
+
+All validation signals should converge into one review-oriented view.
+
+### Anomaly classes
+
+| Category | Examples |
+|---|---|
+| Identity | entity mismatch / ambiguous name |
+| Parcel | Khasra conflict / duplicate parcel |
+| Area | unit or subdivision mismatch |
+| Temporal | mutation/date discontinuity |
+| Document | poor scan / missing page |
+| Spatial | geometry overlap / parcel mismatch |
+| Extraction | low OCR / low field confidence |
+
+### Severity
+
+```text
+CRITICAL
+HIGH
+MEDIUM
+LOW
+INFO
+```
+
+Each anomaly should answer:
+
+```text
+What happened?
+Why was it flagged?
+What evidence supports it?
+What should the officer inspect?
+```
+
+---
+
+# 20. Verification Priority Queue
+
+Manual review time is limited.
+
+Instead of treating every record equally, the system can prioritize cases using:
+
+```text
+Low confidence
+      +
+High anomaly severity
+      +
+Cross-record conflicts
+      +
+Missing evidence
+      +
+Record importance
+      ↓
+Review Priority
+```
+
+This creates a practical human-in-the-loop workflow where officers see the most uncertain and inconsistent cases first.
+
+---
+
+# 21. Verification Workspace
+
+The existing split-screen workspace can be expanded into a structured decision console.
+
+```text
+┌──────────────────────────┬─────────────────────────────┐
+│                          │                             │
+│     SOURCE DOCUMENT      │      STRUCTURED RECORD      │
+│                          │                             │
+│  Zoom / Rotate / Page    │  Owner       [96%]          │
+│  OCR overlay             │  Khasra      [91%] ⚠        │
+│  Evidence region         │  Area        [54%] ⚠        │
+│                          │                             │
+│                          │  Validation: 2 issues        │
+│                          │                             │
+│                          │  [Accept] [Edit] [Reject]   │
+│                          │                             │
+└──────────────────────────┴─────────────────────────────┘
+```
+
+### Review controls
+
+- per-field accept/edit/reject
+- source evidence jump
+- validation explanation
+- conflict explanation
+- correction reason
+- reviewer identity
+- verification timestamp
+- previous-value comparison
+
+---
+
+# 22. Maker–Checker Verification
+
+For higher assurance workflows, use separation of responsibilities.
+
+```text
+Operator
+   ↓
+Digitization
+   ↓
+Verifier
+   ↓
+Review
+   ↓
+Supervisor
+   ↓
+Final Certification
+```
+
+The exact role hierarchy can be configured for the deployment.
+
+This allows the same record to have:
+
+- created by
+- corrected by
+- verified by
+- approved by
+- audited by
+
+without collapsing every action into a single user.
+
+---
+
+# 23. Versioned Record History
+
+A verified record should remain historically inspectable.
+
+### Target version model
+
+```text
+Record v1
+   ↓
+Record v2
+   ↓
+Record v3
+   ↓
+Current
+```
+
+Each revision stores:
+
+- valid-from
+- valid-to
+- is-current
+- edited-by
+- changed-fields
+- reason
+- supporting evidence
+
+A temporal/SCD-Type-2 style model can retain historical versions without overwriting prior verified states.
+
+---
+
+# 24. Evidence Ledger & Provenance
+
+The full evidence chain can be represented as:
+
+```text
+SOURCE FILE
+    ↓
+FILE HASH
+    ↓
+PROCESSING RUN
+    ↓
+OCR RESULT
+    ↓
+EXTRACTED FIELD
+    ↓
+CONFIDENCE
+    ↓
+VALIDATION
+    ↓
+OFFICER CORRECTION
+    ↓
+VERIFICATION
+    ↓
+FINAL RECORD
+    ↓
+REPORT / PUBLIC VERIFICATION
+```
+
+### Integrity model
+
+Use:
+
+- SHA-256 document hash
+- record hash
+- immutable-style append-only event history
+- version identifiers
+- timestamps
+- actor IDs
+
+A hash is an integrity fingerprint; it is **not automatically a legally valid digital signature**.
+
+### Optional integrity extensions
+
+For environments that require stronger tamper-evidence, the provenance layer can be extended with:
+
+- hash chaining across audit events
+- Merkle-style evidence aggregation
+- signed verification manifests
+- optional permissioned blockchain anchoring
+
+Blockchain is an **optional integrity/distribution extension**, not a substitute for validation, source evidence, or human certification.
+
+---
+
+# 25. Fraud & Dispute Intelligence
+
+The target anomaly layer can identify signals associated with:
+
+- possible double entry
+- duplicate parcel registration
+- owner conflicts
+- suspicious area inflation
+- unexpected ownership transitions
+- conflicting mutation histories
+- cadastral overlap
+
+The output should be a **risk flag for investigation**, not a legal finding.
+
+### Example
+
+```text
+Parcel: 124/3
+
+⚠ Possible Double Entry
+
+Record A
+Owner: X
+Date: 2018
+
+Record B
+Owner: Y
+Date: 2019
+
+Related Khasra: 124/3
+Overlap: High
+```
+
+---
+
+# 26. Deed / Record Difference Viewer
+
+For related versions of a document or record:
+
+```text
+Previous Version        Current Version
+
+Owner: A                Owner: B
+Area: 2.40 ha           Area: 3.10 ha
+Khasra: 124/3            Khasra: 124/3
+```
+
+Highlight:
+
+- changed owners
+- changed areas
+- changed parcel identifiers
+- changed dates
+- added/removed clauses
+- suspicious numeric changes
+
+This is especially useful when investigating historical changes.
+
+---
+
+# 27. AI-Assisted Correction & Continuous Learning
+
+Officer corrections can become structured learning signals.
+
+```text
+AI Prediction
+      ↓
+Officer Correction
+      ↓
+Correction Reason
+      ↓
+Gold Label
+      ↓
+Evaluation Dataset
+      ↓
+Model Improvement
+      ↓
+New Model Version
+```
+
+The system should capture:
+
+- original prediction
+- corrected value
+- field name
+- source evidence
+- correction reason
+- document type
+- language
+- model version
+- reviewer
+
+Future models can then be evaluated against a stable golden set rather than being silently retrained.
+
+---
+
+# 28. AI Quality & Evaluation Dashboard
+
+Accuracy should be measured, not claimed.
+
+### Recommended metrics
+
+| Metric | Purpose |
+|---|---|
+| CER | OCR character error |
+| WER | OCR word error |
+| Precision | Extraction correctness |
+| Recall | Extraction coverage |
+| F1 | Field extraction quality |
+| Latency | Processing time |
+| Confidence calibration | Whether confidence reflects reality |
+| Review rate | Percentage requiring human review |
+| Resolution rate | Percentage resolved without escalation |
+
+### Evaluation dimensions
+
+Measure separately by:
+
+- language
+- document type
+- scan quality
+- handwriting vs printed
+- field
+- model version
+
+---
+
+# 29. Current Evaluation Transparency
+
+The present prototype evaluates a small labelled sample set.
+
+| Metric | Current result |
+|---|---:|
+| Macro-average field F1 | **0.042** |
+| Mean Character Error Rate | **62%** |
+
+These numbers are not presented as production accuracy.
+
+They demonstrate the current weakness of the off-the-shelf OCR/extraction pipeline and provide a baseline for improvement.
+
+The evaluation should remain reproducible through the application's evaluation workflow.
+
+---
+
+# 30. Smart Search & Natural-Language Query Layer
+
+The registry can evolve from field filters to semantic record search.
+
+Examples:
+
+```text
+Show verified land owned by Ramesh Kumar in Village X.
+```
+
+```text
+Find parcels where the current owner differs from the 1990 record.
+```
+
+```text
+Show records with area mismatches above 5%.
+```
+
+```text
+Find documents whose Khasra number conflicts with another record.
+```
+
+The query layer should translate natural-language requests into constrained database filters and validation predicates rather than allowing unrestricted database generation.
+
+---
+
+# 31. Citizen Verification Portal
+
+A public verification layer can expose only safe, non-sensitive information.
+
+### Flow
+
+```text
+Verified Record
+      ↓
+Verification ID
+      ↓
+QR Code
+      ↓
+Public Verification Page
+      ↓
+Status + Safe Record Metadata
+      ↓
+Integrity Check
+```
+
+The citizen portal should not expose:
+
+- internal confidence diagnostics
+- private staff notes
+- credentials
+- sensitive audit metadata
+- protected personal information
+
+---
+
+# 32. Secure Public Certificate
+
+A future certificate can contain:
+
+- Verification ID
+- Record reference
+- Verification timestamp
+- issuing authority metadata
+- QR verification link
+- SHA-256 integrity fingerprint
+
+The QR endpoint verifies that the presented record corresponds to the stored verification state.
+
+---
+
+# 33. Offline / Low-Connectivity Field Workflow
+
+For rural field environments, a future client can support:
+
+```text
+Offline Capture
+      ↓
+Local Queue
+      ↓
+Encrypted Local Store
+      ↓
+Connectivity Restored
+      ↓
+Sync Queue
+      ↓
+Server Reconciliation
+```
+
+Possible implementation:
+
+- IndexedDB
+- service worker
+- sync queue
+- idempotency keys
+- conflict resolution
+- resumable uploads
+
+Offline mode should never bypass server-side authorization or verification rules.
+
+---
+
+# 34. Async Processing Architecture
+
+Large multi-page documents should not block API requests.
+
+### Target architecture
+
+```text
+Frontend
+   ↓
+FastAPI
+   ↓
+Transactional Outbox
+   ↓
+Redis / Queue
+   ↓
+Celery Worker
+   ↓
+AI Processing
+   ↓
+Database
+   ↓
+Frontend Status
+```
+
+A worker/sweeper can detect orphaned or stuck jobs.
+
+This is preferable to running heavy OCR synchronously inside the request thread.
+
+---
+
+# 35. Integration Architecture
+
+All external systems should sit behind explicit adapters.
+
+```text
+                Bhumi Praman Core
+                       │
+       ┌───────────────┼────────────────┐
+       ▼               ▼                ▼
+    LRMS Adapter   DILRMP Adapter   GIS Adapter
+       │               │                │
+       ▼               ▼                ▼
+  State System     Government      Cadastral DB
+                    System
+```
+
+Possible future integrations:
+
+- DILRMP
+- state LRMS
+- registration systems
+- cadastral GIS
+- DigiLocker-style document exchange
+- authorized identity/e-sign services
+- government webhooks
+- public verification APIs
+
+> The current prototype is **integration-ready, not live-integrated** with government systems.
+
+---
+
+# 36. API Architecture
+
+The FastAPI backend can expose:
+
+### Authentication
+
+```text
+POST /api/auth/login
+POST /api/auth/refresh
+```
+
+### Documents
+
+```text
+POST /api/documents/upload
+POST /api/documents/{id}/process
+GET  /api/documents/{id}
+```
+
+### Records
+
+```text
+GET  /api/records
+GET  /api/records/{id}
+PATCH /api/records/{id}
+```
+
+### Verification
+
+```text
+GET  /api/verification/queue
+POST /api/records/{id}/verify
+POST /api/records/{id}/reject
+```
+
+### Evidence / Audit
+
+```text
+GET /api/records/{id}/evidence
+GET /api/records/{id}/history
+GET /api/audit
+```
+
+### Evaluation
+
+```text
+POST /api/evaluation/run
+GET  /api/evaluation/results
+```
+
+### Public verification
+
+```text
+GET /api/public/verify/{verification_id}
+```
+
+Exact endpoints remain implementation-dependent; FastAPI/OpenAPI provides the API contract.
+
+---
+
+# 37. Proposed Data Model
+
+A scalable PostgreSQL/PostGIS deployment can use logical entities such as:
+
+```text
+users
+documents
+document_pages
+processing_runs
+ocr_spans
+records
+record_fields
+field_evidence
+validation_issues
+record_relationships
+ownership_events
+parcel_events
+parcel_geometries
+entity_candidates
+verification_tasks
+record_versions
+audit_events
+model_versions
+correction_labels
+integration_outbox
+public_verification_tokens
+```
+
+### Relationship model
+
+```text
+Document
+  └── Pages
+       └── OCR Spans
+            └── Evidence
+                 └── Record Fields
+                      └── Validation
+                           └── Verification
+                                └── Versioned Record
+```
+
+---
+
+# 38. Technology Architecture
+
+## Current Core
+
+| Layer | Current technology |
+|---|---|
+| Frontend | React 19, TypeScript, Vite |
+| UI | Tailwind CSS v4 |
+| Routing | React Router |
+| Data fetching | TanStack Query / Axios |
+| Analytics | Recharts |
+| GIS UI | React Leaflet |
+| Backend | Python, FastAPI, Uvicorn |
+| ORM | SQLAlchemy 2 |
+| Validation | Pydantic v2 |
+| OCR | Tesseract / pytesseract |
+| CV | OpenCV |
+| PDF | PyMuPDF |
+| Reports | ReportLab |
+| Database | SQLite / PostgreSQL |
+| Authentication | JWT |
+| Password security | bcrypt |
+| Testing | pytest, HTTPX, FastAPI TestClient |
+
+## Extended Intelligence Stack
+
+| Capability | Target technologies |
+|---|---|
+| OCR ensemble | Tesseract, PaddleOCR, RapidOCR / ONNX |
+| Handwriting | TrOCR / Indic HTR / optional Sarvam-style provider adapter |
+| Vision | OpenCV, YOLOv8 / Detectron2 |
+| NLP / NER | spaCy, Hugging Face Transformers |
+| Indic NLP | Indic NLP libraries, MuRIL-class models |
+| Async processing | Celery + Redis |
+| Object storage | S3-compatible / MinIO |
+| Spatial DB | PostgreSQL + PostGIS |
+| Map services | GeoServer |
+| Desktop GIS | QGIS |
+| 3D spatial visualization | CesiumJS (optional extension) |
+| Search / analytics | PostgreSQL full-text + optional vector/search layer |
+| Observability | Grafana + metrics/logging stack |
+| Data evaluation | CER, WER, field precision/recall/F1, latency |
+| Deployment | Docker / Docker Compose; Kubernetes for larger environments |
+
+---
+
+# 39. Repository Structure
+
+```text
 bhumi-praman/
-├── frontend/        React + Vite + TypeScript app
-├── backend/         FastAPI app (app/api, models, schemas, services, database)
-├── ai/              The Crystal OCR/extraction pipeline (see ai/README.md)
-├── data/            Sample documents + ground truth (safe, fictional demo data)
-├── database/seed/   Seed script — demo users + real sample documents
-├── storage/         Uploaded files, processed pages, generated PDF reports
-├── deployment/       Docker files
-└── README.md        This file
+│
+├── frontend/
+│   ├── src/
+│   └── ...
+│
+├── backend/
+│   └── app/
+│       ├── api/
+│       ├── auth/
+│       ├── database/
+│       ├── middleware/
+│       ├── models/
+│       ├── schemas/
+│       └── services/
+│
+├── ai/
+│   ├── preprocessing/
+│   ├── ocr/
+│   ├── extraction/
+│   ├── confidence/
+│   ├── validator.py
+│   ├── generate_samples.py
+│   └── tests/
+│
+├── data/
+│   ├── sample_documents/
+│   └── evaluation/
+│
+├── database/
+│   └── seed/
+│
+├── gis/
+│
+├── storage/
+│
+├── scripts/
+│
+├── deployment/
+│
+├── docs/
+│
+├── tests/
+│
+└── README.md
 ```
 
-## 7. Prerequisites
+---
 
-- **Python 3.11+**
-- **Node.js 18+** and npm
-- **Tesseract OCR** (with English, Assamese, Bengali, Gujarati, Hindi, Kannada, Malayalam, Marathi, Odia, Punjabi, Tamil, Telugu. language data)
+# 40. Security Model
+
+Current controls include:
+
+- JWT bearer authentication
+- bcrypt password hashing
+- server-side RBAC
+- content-type and size validation
+- server-generated filenames
+- environment-based secrets
+- centralized exception handling
+- append-only audit events
+- SHA-256 record integrity fingerprints
+
+### Planned production hardening
+
+- HTTPS everywhere
+- secret manager / KMS
+- encrypted object storage
+- database encryption strategy
+- key rotation
+- stronger session controls
+- rate limiting
+- security headers
+- malware scanning on uploaded files
+- immutable/WORM audit storage where required
+- centralized logging and monitoring
+- backup/restore testing
+- formal penetration testing
+
+---
+
+# 41. Privacy & Governance
+
+Land records can contain sensitive personal and administrative information.
+
+The platform should therefore support:
+
+- role-limited field visibility
+- least-privilege access
+- data minimization for public views
+- auditability of every privileged action
+- configurable retention policies
+- secure document storage
+- explicit public/private data boundaries
+
+Citizen-facing verification should expose only the minimum information required for verification.
+
+---
+
+# 42. Current vs Planned vs Integration-Only
+
+| Capability | Status |
+|---|---|
+| OCR + field extraction | ✅ Current |
+| Source highlighting | ✅ Current |
+| Human verification | ✅ Current |
+| Audit trail | ✅ Current |
+| GIS prototype | ✅ Current |
+| PDF + SHA-256 | ✅ Current |
+| Evaluation dashboard | ✅ Current |
+| Advanced Indic HTR | 🔵 Planned |
+| OCR ensemble routing | 🔵 Planned |
+| Document classification | 🔵 Planned |
+| Multi-page record merging | 🔵 Planned |
+| Cross-document reconciliation | 🔵 Planned |
+| Ownership genealogy | 🔵 Planned |
+| Unit normalization | 🔵 Planned |
+| Area/subdivision reconciliation | 🔵 Planned |
+| Entity resolution | 🔵 Planned |
+| Advanced cadastral topology | 🔵 Planned |
+| Verification priority queue | 🔵 Planned |
+| Active learning dataset loop | 🔵 Planned |
+| Natural-language search | 🔵 Planned |
+| Citizen QR verification | 🔵 Planned |
+| Offline field sync | 🔵 Planned |
+| Celery/Redis async workers | 🔵 Planned |
+| S3/MinIO object storage | 🔵 Planned |
+| PostGIS production deployment | 🔵 Planned |
+| GeoServer integration | 🔵 Planned |
+| DILRMP/LRMS live integration | 🟣 Integration-only / future |
+| Government APIs | 🟣 Integration-only / future |
+| Authoritative cadastral boundaries | 🟣 Requires authoritative data source |
+
+**Legend**
+
+- ✅ Implemented and demonstrated
+- 🔵 Planned / architecture target
+- 🟣 Requires external system/data/authority
+
+---
+
+# 43. Technical Differentiators
+
+## 25.1 Evidence-First
+
+Every important extracted field can point back to the source scan.
+
+## 25.2 Cross-Record, Not Document-Only
+
+Related documents are reconciled instead of being treated as independent OCR jobs.
+
+## 25.3 Temporal Intelligence
+
+Ownership and parcel changes are modeled as events and versions.
+
+## 25.4 Spatial Consistency
+
+GIS becomes a validation signal, not just a map.
+
+## 25.5 Human Certification
+
+AI generates candidates; authorized officers certify the final record.
+
+## 25.6 Explainable Confidence
+
+The system explains why a field received its confidence level.
+
+## 25.7 Measurable Accuracy
+
+CER, WER, field F1, latency, review rate, and error buckets can be tracked over time.
+
+## 25.8 Model Agnostic
+
+OCR/HTR providers are behind adapters, allowing replacement without rewriting the application.
+
+## 25.9 Integration Ready
+
+Existing government systems remain external authorities; Bhumi Praman provides the intelligence layer around them.
+
+---
+
+# 44. From Existing Prototype to Intelligence Platform
+
+The upgrade path is intentionally incremental:
+
+```text
+PHASE 1 — CURRENT
+OCR
+Extraction
+Confidence
+Validation
+Human Verification
+Audit
+GIS
+Reports
+      │
+      ▼
+PHASE 2 — INTELLIGENCE
+Document Classification
+Multi-page Grouping
+Unit Normalization
+Entity Resolution
+Cross-record Reconciliation
+Timeline
+Area Reconciliation
+      │
+      ▼
+PHASE 3 — SPATIAL + RISK
+PostGIS
+Parcel Linking
+Topology Checks
+Anomaly Center
+Fraud/Conflict Signals
+Priority Queue
+      │
+      ▼
+PHASE 4 — LEARNING
+Correction Dataset
+Benchmarking
+Model Registry
+Retraining
+Confidence Calibration
+      │
+      ▼
+PHASE 5 — ECOSYSTEM
+Public Verification
+QR Certificates
+Offline Sync
+LRMS/DILRMP Adapters
+Government APIs
+```
+
+---
+
+# 45. Installation
+
+## Prerequisites
+
+- Python 3.11+
+- Node.js 18+
+- npm
 - Git
+- Tesseract OCR
+- English + required Indic language packs
 
-## 8–9. Installation &amp; Environment Setup
+### Windows
 
-### Windows (PowerShell) &mdash; primary supported dev environment
+Install Tesseract and ensure it is either on `PATH` or configured through:
 
-**1. Install Tesseract OCR:**
-Download and run the UB Mannheim Windows installer: https://github.com/UB-Mannheim/tesseract/wiki
-During install, tick **Additional language data** and select **Hindi** and **Assamese** (if Assamese isn't
-listed in your installer version, download `asm.traineddata` from
-https://github.com/tesseract-ocr/tessdata and place it in `tessdata\` under your Tesseract install folder).
+```env
+TESSERACT_CMD=C:\Program Files\Tesseract-OCR\tesseract.exe
+```
 
-By default Tesseract installs to `C:\Program Files\Tesseract-OCR` and is **not** added to PATH. You have two options:
-- Add `C:\Program Files\Tesseract-OCR` to your PATH, **or**
-- Set `TESSERACT_CMD` in `.env` (see below) to `C:\Program Files\Tesseract-OCR\tesseract.exe`
+Verify:
 
-**2. Clone and set up the backend:**
 ```powershell
-git clone <your-repo-url>
-cd bhumi-praman
+tesseract --list-langs
+```
+
+---
+
+# 46. Backend Setup
+
+```powershell
+git clone https://github.com/Anirban-builds-OS/Bhumi-Praman.git
+cd Bhumi-Praman
+
 copy .env.example .env
+
 cd backend
 python -m venv venv
 .\venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 ```
-If `Activate.ps1` is blocked, see [Troubleshooting](#troubleshooting--common-errors) below.
 
-**3. Seed the database (creates demo users + processes the 3 real sample documents):**
+Seed the local environment:
+
 ```powershell
 python ..\database\seed\seed.py
 ```
 
-**4. Set up the frontend (new terminal tab):**
-```powershell
-cd bhumi-praman\frontend
-npm install
-```
+Start the backend:
 
-### macOS / Linux
-
-```bash
-brew install tesseract tesseract-lang   # macOS
-# or: sudo apt-get install tesseract-ocr tesseract-ocr-hin tesseract-ocr-asm   # Debian/Ubuntu
-
-git clone <your-repo-url>
-cd bhumi-praman
-cp .env.example .env
-cd backend
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python3 ../database/seed/seed.py
-
-cd ../frontend
-npm install
-```
-
-## 10. Database Setup
-
-No separate step needed for local development &mdash; SQLite is used by default, and the seed script creates
-the file and all tables automatically (`backend/bhumi_praman.db`, git-ignored). For a real deployment, set
-`DATABASE_URL` in `.env` to a PostgreSQL connection string (e.g.
-`postgresql+psycopg://user:pass@host:5432/bhumi_praman`); every query goes through SQLAlchemy, so this is a
-config change, not a code change.
-
-## 11. AI/OCR Setup
-
-Already covered in step 1 above. To verify Tesseract is correctly installed:
-```powershell
-tesseract --list-langs
-```
-You should see `eng`, `hin`, and `asm` in the list.
-
-## 12–14. Running the Application
-
-**Backend** (from `backend/`, venv active):
 ```powershell
 python -m uvicorn app.main:app --reload --port 8000
 ```
-API docs auto-generated at http://localhost:8000/docs
 
-**Frontend** (from `frontend/`, separate terminal):
+Swagger:
+
+```text
+http://localhost:8000/docs
+```
+
+ReDoc:
+
+```text
+http://localhost:8000/redoc
+```
+
+---
+
+# 47. Frontend Setup
+
+In a separate terminal:
+
 ```powershell
+cd Bhumi-Praman\frontend
+npm install
 npm run dev
 ```
-Open http://localhost:5173 &mdash; the dev server proxies `/api/*` to the backend automatically, so both need
-to be running together but there's nothing else to configure.
 
-For frontend deployed part you can visit https://bhumi-praman.vercel.app
+Open:
 
-**One-command option:** `scripts/start-dev.ps1` (Windows) starts both servers in one PowerShell window &mdash;
-see that script's comments for what it does.
+```text
+http://localhost:5173
+```
 
-## 15. Sample Credentials
+---
 
-Created by the seed script:
+# 48. Database
 
-| Role | Employee Code | Password |
-|---|---|---|
-| Administrator | `ADM-0001` | `Admin@123` |
-| Verification Officer | `OFC-KAM-1102` | `Officer@123` |
-| Record Officer | `REC-0007` | `Record@123` |
+Local development uses SQLite by default.
 
-The login screen also has one-click "quick demo sign-in" cards that fill these in &mdash; they don't grant
-access themselves, they just save typing; the server always determines the actual role from the account.
+For PostgreSQL:
 
-## 16. Sample Document Usage
+```env
+DATABASE_URL=postgresql+psycopg://user:password@host:5432/bhumi_praman
+```
 
-The seed script processes the three real sample documents in `data/sample_documents/` (`DOC001.png`,
-`DOC002.png`, `DOC003.png` &mdash; clean, medium-degraded, and heavily-degraded scans of the same fictional
-Record-of-Rights template) through the real pipeline, so the app has realistic data immediately. To try the
-upload flow yourself with a fresh document, any of these three PNGs can be re-uploaded through **Bulk
-Ingestion**, or generate new synthetic samples with `python ai/generate_samples.py`.
+All application access goes through SQLAlchemy, allowing the database backend to be changed without rewriting the API layer.
 
-## 17. API Documentation
+For production geospatial support:
 
-FastAPI generates interactive OpenAPI docs automatically:
-- Swagger UI: http://localhost:8000/docs
-- ReDoc: http://localhost:8000/redoc
+```text
+PostgreSQL
+   +
+PostGIS
+```
 
-## 18. Testing
+---
+
+# 49. API Documentation
+
+FastAPI automatically exposes:
+
+- Swagger UI — `/docs`
+- ReDoc — `/redoc`
+- OpenAPI schema
+
+This provides an integration surface for future government systems and external clients.
+
+---
+
+# 50. Testing
+
+Current backend tests cover:
+
+- field extraction
+- confidence scoring
+- field → source matching
+- duplicate/conflict detection
+- upload → process → verify → report
+- RBAC
+- evaluation endpoint
+
+Run:
 
 ```powershell
 cd backend
 .\venv\Scripts\Activate.ps1
-pytest tests\test_api.py -v            # API integration tests (real pipeline, temp DB)
-pytest ..\ai\tests\test_pipeline_smoke.py -v   # AI-layer unit/smoke tests
+
+pytest tests\test_api.py -v
+pytest ..\ai\tests\test_pipeline_smoke.py -v
 ```
-20 tests total, all passing as of this build: field extraction, confidence scoring, the field&rarr;source-location
-matcher, duplicate/conflict detection (including a regression test for a bug found and fixed during
-integration &mdash; see `ai/validator.py`'s comments), the full upload&rarr;process&rarr;verify&rarr;report path,
-RBAC enforcement, and the live evaluation endpoint.
 
-Frontend: `cd frontend && npm run build` runs the TypeScript compiler and production build (no separate test
-suite yet &mdash; see [Future Scope](#future-scope)).
+Frontend production build:
 
-## 19–20. Troubleshooting &amp; Common Errors
-
-**Python not recognized** &mdash; Python isn't on PATH. Reinstall from python.org and tick "Add Python to
-PATH" during setup, or use the Microsoft Store Python. Verify with `python --version`.
-
-**Node not recognized** &mdash; Install from nodejs.org (LTS). Verify with `node --version`.
-
-**npm dependency error** &mdash; delete `frontend\node_modules` and `frontend\package-lock.json`, then
-`npm install` again.
-
-**Port already in use** &mdash; find and stop the process:
-```powershell
-netstat -ano | findstr :8000
-taskkill /PID <pid> /F
+```bash
+cd frontend
+npm run build
 ```
-(use `:5173` for the frontend port)
 
-**Database connection failure** &mdash; check `DATABASE_URL` in `.env`. For SQLite (the default), make sure
-the `backend/` folder is writable. For PostgreSQL, confirm the server is running and the credentials are correct.
+---
 
-**OCR model missing / "tesseract is not installed or it's not in your PATH"** &mdash; see section 11 above;
-either add Tesseract to PATH or set `TESSERACT_CMD` in `.env` to the full path of `tesseract.exe`.
+# 51. Benchmarking Strategy
 
-**File upload failure** &mdash; only PDF, JPG, and PNG are accepted, up to 50MB (`MAX_UPLOAD_SIZE_MB` in
-`.env`). Check the backend terminal for the logged error.
+A stronger evaluation bench should maintain a versioned golden dataset.
 
-**CORS error** &mdash; only relevant if you're serving the frontend from somewhere other than the Vite dev
-server's proxy. Add your frontend's origin to `CORS_ORIGINS` in `.env`.
-
-**Frontend cannot connect to backend** &mdash; confirm the backend is running on port 8000 (`curl
-http://localhost:8000/api/health` should return `{"status":"ok",...}`). The frontend dev server proxies `/api`
-to `http://localhost:8000` (see `frontend/vite.config.ts`) &mdash; if you changed the backend port, update the
-proxy target there too.
-
-**PowerShell execution policy blocks `Activate.ps1`** &mdash;
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```text
+Golden Set
+   ↓
+Model Version N
+   ↓
+Evaluation
+   ├── CER
+   ├── WER
+   ├── Field F1
+   ├── Precision
+   ├── Recall
+   ├── Latency
+   └── Review Rate
+   ↓
+Compare with Model Version N+1
 ```
-then re-run `.\venv\Scripts\Activate.ps1`. This only changes the policy for the current terminal session.
 
-**Virtual environment activation (Windows)** &mdash; always `.\venv\Scripts\Activate.ps1` in PowerShell (not
-`source venv/bin/activate`, which is macOS/Linux). In `cmd.exe`, use `venv\Scripts\activate.bat` instead.
+Recommended evaluation buckets:
 
-## 21. 🛠️ Technology Used
+- clean scans
+- low-resolution scans
+- skewed scans
+- noisy scans
+- printed text
+- handwriting
+- Hindi
+- Assamese
+- Bengali
+- other configured Indic languages
+- different document layouts
 
-### 🎨 Frontend
+---
 
-<p>
-  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" />
-  <img src="https://img.shields.io/badge/TypeScript-6-3178C6?logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/Vite-8-646CFF?logo=vite&logoColor=white" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white" />
-  <img src="https://img.shields.io/badge/React_Router-7-CA4245?logo=reactrouter&logoColor=white" />
-  <img src="https://img.shields.io/badge/Axios-HTTP_Client-5A29E4?logo=axios&logoColor=white" />
-  <img src="https://img.shields.io/badge/React_Query-5-FF4154?logo=reactquery&logoColor=white" />
-  <img src="https://img.shields.io/badge/Leaflet-1.9-199900?logo=leaflet&logoColor=white" />
-  <img src="https://img.shields.io/badge/Recharts-3-22B5BF" />
-</p>
+# 52. Demo Walkthrough
 
-### ⚙️ Backend & API
+### Existing prototype
 
-<p>
-  <img src="https://img.shields.io/badge/Python-3.x-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/FastAPI-0.115+-009688?logo=fastapi&logoColor=white" />
-  <img src="https://img.shields.io/badge/Uvicorn-ASGI-499848?logo=uvicorn&logoColor=white" />
-  <img src="https://img.shields.io/badge/Pydantic-2-E92063?logo=pydantic&logoColor=white" />
-  <img src="https://img.shields.io/badge/SQLAlchemy-2-D71F00?logo=sqlalchemy&logoColor=white" />
-  <img src="https://img.shields.io/badge/REST_API-Architecture-02569B" />
-</p>
+1. Sign in using a demo role.
+2. Open the dashboard.
+3. Upload a PDF/JPG/PNG.
+4. Process the document.
+5. Inspect the source scan.
+6. Inspect field-level OCR/extraction confidence.
+7. Click evidence-linked fields.
+8. Review validation findings.
+9. Accept, edit, or reject fields.
+10. Verify the record.
+11. Open Archive Registry.
+12. View the GIS representation.
+13. Generate the PDF report.
+14. Inspect the audit trail.
+15. Re-run the evaluation dashboard.
 
-### 🤖 AI, OCR & Document Intelligence
+### Intelligence-layer demo target
 
-<p>
-  <img src="https://img.shields.io/badge/Tesseract-OCR-4285F4?logo=google&logoColor=white" />
-  <img src="https://img.shields.io/badge/OpenCV-Computer_Vision-5C3EE8?logo=opencv&logoColor=white" />
-  <img src="https://img.shields.io/badge/NumPy-Scientific_Computing-013243?logo=numpy&logoColor=white" />
-  <img src="https://img.shields.io/badge/Pandas-Data_Processing-150458?logo=pandas&logoColor=white" />
-  <img src="https://img.shields.io/badge/Pillow-Image_Processing-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/Graphviz-Workflow_Visualization-FF6B35" />
-  <img src="https://img.shields.io/badge/JiWER-OCR_Evaluation-7B1FA2" />
-</p>
+```text
+Upload 2–4 related records
+        ↓
+Extract
+        ↓
+Link related parcel records
+        ↓
+Show owner / area / mutation timeline
+        ↓
+Detect an inconsistency
+        ↓
+Show source evidence
+        ↓
+Prioritize verification
+        ↓
+Officer resolves conflict
+        ↓
+Create verified version
+        ↓
+Generate QR verification
+```
 
-### 🗄️ Data & Storage
+---
 
-<p>
-  <img src="https://img.shields.io/badge/SQLAlchemy-ORM-D71F00?logo=sqlalchemy&logoColor=white" />
-  <img src="https://img.shields.io/badge/SQLite-Prototype-003B57?logo=sqlite&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostgreSQL-Production_Target-4169E1?logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostGIS-GIS_Extension-4169E1?logo=postgresql&logoColor=white" />
-</p>
+# 53. Limitations
 
-### 🗺️ GIS & Spatial Intelligence
+Bhumi Praman is currently a **student prototype**, not a deployed government land-record system.
 
-<p>
-  <img src="https://img.shields.io/badge/Leaflet-Interactive_Maps-199900?logo=leaflet&logoColor=white" />
-  <img src="https://img.shields.io/badge/PostGIS-Spatial_Data-4169E1?logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/GeoJSON-Geospatial_Data-8BC34A" />
-</p>
+### Current limitations
 
-### 🔐 Authentication & Security
+- OCR accuracy is currently weak on degraded documents.
+- The current OCR engine is based on off-the-shelf Tesseract.
+- Handwriting recognition is not yet production-grade.
+- The current labelled evaluation set is small.
+- GIS positions are prototype/demo locations, not surveyed cadastral parcel boundaries.
+- Sample/demo data is fictional/synthetic.
+- Live DILRMP/LRMS integration is not implemented.
+- Multi-page PDFs are not yet merged into unified cross-page records.
+- Frontend automated tests are not yet comprehensive.
+- SHA-256 provides integrity evidence, not PKI-based legal non-repudiation.
+- Advanced capabilities in this README are explicitly marked as planned unless listed as current.
 
-<p>
-  <img src="https://img.shields.io/badge/JWT-Authentication-000000?logo=jsonwebtokens&logoColor=white" />
-  <img src="https://img.shields.io/badge/bcrypt-Password_Hashing-338033" />
-  <img src="https://img.shields.io/badge/RBAC-Role_Based_Access-4B5563" />
-  <img src="https://img.shields.io/badge/Environment_Variables-.env-6B7280" />
-</p>
+These limitations are intentional disclosures, not hidden behind marketing claims.
 
-### 📄 Document & PDF Processing
+---
 
-<p>
-  <img src="https://img.shields.io/badge/PyMuPDF-PDF_Processing-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/ReportLab-PDF_Generation-0A7B83?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/Multipart-File_Uploads-6B7280" />
-</p>
+# 54. Roadmap
 
-### 🧪 Testing & Code Quality
+## Near Term
 
-<p>
-  <img src="https://img.shields.io/badge/Pytest-Testing-0A9EDC?logo=pytest&logoColor=white" />
-  <img src="https://img.shields.io/badge/HTTPX-API_Testing-7B42BC" />
-  <img src="https://img.shields.io/badge/OXLint-Linting-111827" />
-  <img src="https://img.shields.io/badge/TypeScript-Static_Typing-3178C6?logo=typescript&logoColor=white" />
-</p>
+- [ ] OCR ensemble adapter
+- [ ] Advanced Indic HTR
+- [ ] Document type classifier
+- [ ] Multi-page record grouping
+- [ ] Unit normalization
+- [ ] Cross-document reconciliation
+- [ ] Ownership/parcel timeline
+- [ ] Area/subdivision reconciliation
+- [ ] Entity resolution
+- [ ] Anomaly Center
+- [ ] Verification priority queue
 
-### 🐳 DevOps & Development
+## Platform
 
-<p>
-  <img src="https://img.shields.io/badge/Docker-Containerization-2496ED?logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/Docker_Compose-Multi--Service-2496ED?logo=docker&logoColor=white" />
-  <img src="https://img.shields.io/badge/Git-Version_Control-F05032?logo=git&logoColor=white" />
-  <img src="https://img.shields.io/badge/GitHub-Code_Hosting-181717?logo=github&logoColor=white" />
-  <img src="https://img.shields.io/badge/VS_Code-Development-007ACC?logo=visualstudiocode&logoColor=white" />
-</p>
+- [ ] PostGIS parcel model
+- [ ] GeoServer integration
+- [ ] Optional CesiumJS 3D parcel visualization
+- [ ] Celery + Redis workers
+- [ ] Transactional outbox + job sweeper
+- [ ] S3/MinIO document storage
+- [ ] SCD-Type-2 record versioning
+- [ ] Model registry
+- [ ] Correction dataset pipeline
+- [ ] Automated benchmark suite
 
-### 🧰 Core Languages
+## Citizen & Ecosystem
 
-<p>
-  <img src="https://img.shields.io/badge/Python-Primary-3776AB?logo=python&logoColor=white" />
-  <img src="https://img.shields.io/badge/TypeScript-Frontend-3178C6?logo=typescript&logoColor=white" />
-  <img src="https://img.shields.io/badge/JavaScript-Frontend_Runtime-F7DF1E?logo=javascript&logoColor=black" />
-  <img src="https://img.shields.io/badge/SQL-Database-336791?logo=postgresql&logoColor=white" />
-  <img src="https://img.shields.io/badge/HTML5-Markup-E34F26?logo=html5&logoColor=white" />
-  <img src="https://img.shields.io/badge/CSS3-Styling-1572B6?logo=css3&logoColor=white" />
-</p>
+- [ ] Public verification portal
+- [ ] QR-enabled certificate
+- [ ] Notification adapters for approved citizen/officer events
+- [ ] Public-safe record view
+- [ ] Offline field workflow
+- [ ] LRMS/DILRMP adapters
+- [ ] Government API/webhook integration
+- [ ] Optional signed/hash-chain or permissioned-ledger anchoring
 
+---
 
-## 22. Deployment
+# 55. Engineering Rules
 
-`deployment/` contains a `Dockerfile` for the backend and one for the frontend, plus a root
-`docker-compose.yml` that wires both together with a persistent volume for `storage/` and the SQLite file.
-These are provided as a deployment starting point; they have not been run against a live container registry
-or orchestrator as part of this build (no Docker daemon was available in the environment used to build this) &mdash;
-validate `docker compose up --build` in your own environment before relying on it. For a real deployment, also
-switch `DATABASE_URL` to PostgreSQL and set a strong, random `SECRET_KEY`.
+Bhumi Praman follows these rules as the feature set grows:
 
-## 23. Security
+### Rule 1 — Never hide evidence
 
-- Passwords hashed with bcrypt, never stored or logged in plain text
-- JWT bearer auth; role is always resolved server-side from the authenticated user's account row, never
-  accepted from the client
-- RBAC enforced on every mutating endpoint via FastAPI dependencies (see `backend/app/middleware/auth.py`)
-- File upload validation: content-type allowlist, size limit, server-generated filenames (the original
-  filename is stored as metadata only, never used as a filesystem path)
-- No secrets or credentials in source; everything sensitive comes from `.env` (see `.env.example`)
-- Centralized exception handling: the client never sees a raw stack trace (`backend/app/main.py`)
-- Every mutating action is written to an append-only audit log
-- This is a **prototype's** security posture, not a certified/audited one &mdash; see Limitations.
+Every important extracted value should remain traceable to its source.
 
-## 24. Limitations
+### Rule 2 — Never turn confidence into authority
 
-Being direct about where this stands, per the project's own technical-honesty requirement:
+A high score means "more likely correct", not "legally verified".
 
-- **OCR accuracy is currently low on degraded scans.** Measured on the 3-document labelled sample set:
-  macro-average field F1 = **0.042**, mean character error rate = **62%** (re-run any time via **State
-  Reports &rarr; Run Evaluation**, admin only &mdash; this number is never hard-coded). The OCR engine is
-  off-the-shelf Tesseract; it is not custom-trained, and it does not handle handwriting. This is exactly why
-  the human verification workspace exists as a mandatory step, not an optional one.
-- **GIS positions are locality-level approximations**, not surveyed cadastral parcel boundaries &mdash; there
-  is no real survey dataset available to this project. The map UI labels this explicitly.
-- **Sample/demo data is entirely fictional**, generated by `ai/generate_samples.py`.
-- **No government system integration exists** (DILRMP, state LRMS, etc.) &mdash; the architecture is
-  integration-ready (a clean adapter boundary), not integrated.
-- Multi-page PDFs are split into pages and each page is processed independently as its own record; there's no
-  cross-page record merging.
-- No automated frontend test suite yet (backend has 20 passing tests; frontend is verified via a clean
-  TypeScript build and manual/proxy integration testing during this build).
-- Record verification hash is a SHA-256 integrity fingerprint, not a PKI digital signature with legal
-  non-repudiation.
+### Rule 3 — Never overwrite history silently
 
-## 25. Future Scope
+Corrections should create versioned events and retain previous values.
 
-- Swap in a trained OCR/NER model as the sample set grows (the adapter boundary in `pipeline_service.py`
-  exists specifically for this)
-- Real DILRMP/state LRMS integration behind the same adapter pattern
-- Multi-page record merging for documents that span several physical pages
-- Alembic migrations for schema evolution against a production PostgreSQL database
-- Frontend automated test suite (Vitest + React Testing Library)
-- Continuous-learning loop: officer corrections already flow into the audit log; the next step is exporting
-  them as a labelled fine-tuning/evaluation dataset (see `ai/README.md`'s own upgrade-path notes)
+### Rule 4 — Never treat GIS as a substitute for authoritative survey data
 
-## Demo Walkthrough
+Spatial visualization and spatial validation depend on the quality and authority of the underlying dataset.
 
-1. Sign in as the Verification Officer (or use the quick demo card)
-2. **Dashboard** &mdash; live counts across the pipeline
-3. **Bulk Ingestion** &mdash; upload a PDF/JPG/PNG, click Process
-4. You're dropped into the **Verification Workspace**: the real scanned image on the left, extracted fields
-   on the right with real confidence scores and real source-highlight boxes; accept, edit, or reject each field
-5. Once every flagged field is resolved and validation is clean, **Verify Record**
-6. **Archive Registry** to search, **GIS Explorer** to see it on the map, **Export PDF** for the official report
-7. **Audit Trails** to see every action logged, **State Reports** to re-run the real accuracy evaluation
+### Rule 5 — Never call an integration live when it is simulated
+
+Adapters, mock services, and real government systems must be clearly distinguished.
+
+### Rule 6 — Measure the model continuously
+
+Every meaningful OCR/extraction upgrade should be evaluated against a fixed benchmark.
+
+---
+
+# 56. Final Positioning
+
+Most digitization systems stop at:
+
+> **"We converted the document into data."**
+
+Bhumi Praman is designed to continue:
+
+> **"We can show the evidence, measure confidence, compare related records, identify inconsistencies, trace historical changes, route uncertainty to a human, preserve the entire audit history, and expose a verifiable final record."**
+
+### The intended transformation
+
+```text
+LEGACY DOCUMENT
+       ↓
+DIGITAL DATA
+       ↓
+VALIDATED DATA
+       ↓
+RECONCILED DATA
+       ↓
+VERIFIED DATA
+       ↓
+TRACEABLE DATA
+       ↓
+TRUSTED LAND RECORD
+```
+
+---
+
+# 57. License
+
+Add the project's applicable open-source license here.
+
+---
